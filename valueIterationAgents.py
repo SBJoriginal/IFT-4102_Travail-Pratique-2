@@ -45,7 +45,20 @@ class ValueIterationAgent(ValueEstimationAgent):
 
         # Write value iteration code here
         "*** YOUR CODE HERE ***"
-
+        # Itération de la valeur pour le nombre d'itérations spécifié
+        for i in range(iterations):
+            nouvelle_valeur = util.Counter()
+            for etat in mdp.getStates():
+                if mdp.isTerminal(etat):
+                    nouvelle_valeur[etat] = 0
+                else:
+                    valeur_max = -float('inf')
+                    for action in mdp.getPossibleActions(etat):
+                        valeur_q = self.computeQValueFromValues(etat, action)
+                        if valeur_q > valeur_max:
+                            valeur_max = valeur_q
+                    nouvelle_valeur[etat] = valeur_max
+            self.values = nouvelle_valeur
 
     def getValue(self, state):
         """
@@ -55,12 +68,21 @@ class ValueIterationAgent(ValueEstimationAgent):
 
 
     def computeQValueFromValues(self, state, action):
-        """
-          Compute the Q-value of action in state from the
-          value function stored in self.values.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+            """
+            Compute the Q-value of action in state from the
+            value function stored in self.values.
+            
+            Formule : Q(s, a) = Sum_{s'} T(s, a, s') * [R(s, a, s') + gamma * V(s')]
+            """
+            valeur_q = 0.0
+            
+            # Pour chaque état suivant possible et sa probabilité d'occurrence basée sur Bellman
+            for nextState, prob in self.mdp.getTransitionStatesAndProbs(state, action):
+                recompense = self.mdp.getReward(state, action, nextState)
+                valeur_etat_suivant = self.getValue(nextState) 
+                gain_actualise = recompense + self.discount * valeur_etat_suivant
+                valeur_q += prob * gain_actualise                
+            return valeur_q
 
     def computeActionFromValues(self, state):
         """
@@ -71,8 +93,22 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # 1. Récupérer les actions possibles 
+        actions_possibles = self.mdp.getPossibleActions(state)
+        if not actions_possibles:
+            return None
+        
+        # 2. Trouver l'action avec la valeur Q maximale
+        meilleure_action = None
+        max_valeur_q = -float('inf')
+        
+        for action in actions_possibles:
+            valeur_q = self.getQValue(state, action)
+            if valeur_q > max_valeur_q:
+                max_valeur_q = valeur_q
+                meilleure_action = action
+            
+        return meilleure_action        
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
